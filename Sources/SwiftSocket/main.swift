@@ -78,6 +78,9 @@ class LongSocket {
                         var json = [String:String]()
                         json["port"] = "\(socket.remotePort)"
                         json["host"] = socket.remoteHostname
+                        let socketaddin = self.getSocketadd_in(address: (socket.signature?.address)!)!
+                        
+                        json["in_port"] = "\(socketaddin.sin_port)"
                         let data = try JSONSerialization.data(withJSONObject: json, options: .prettyPrinted)
                         print(names)
                         for (_, socket) in self.connectSockets {
@@ -98,6 +101,18 @@ class LongSocket {
                 print(error)
             }
         }
+    }
+    func getSocketadd_in(address:Socket.Address) -> sockaddr_in? {
+        var s:sockaddr_in?
+        switch address {
+        case let .ipv4(sockaddrin):
+            s = sockaddrin
+            break
+            
+        default: break
+            
+        }
+        return s
     }
 }
 
