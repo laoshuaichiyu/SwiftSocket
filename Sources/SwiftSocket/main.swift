@@ -10,7 +10,7 @@ class LongSocket {
     var lisentSocket:Socket?
     var port:Int?
     var connectUsers = [Int32: String]()
-    var connectUserNames = [String]()
+    var connectUserNames = [String : [String : String]]()
     
     
     init(port:Int) {
@@ -35,7 +35,7 @@ class LongSocket {
                     
                     print("new scoket in")
                     print("host:\(newSocket.remoteHostname)\nport:\(newSocket.remotePort)")
-                    print(newSocket.signature!)
+                    
                     self.addNewConnectSocket(socket: newSocket)
                 } while true
                 
@@ -47,8 +47,6 @@ class LongSocket {
     }
     
     func addNewConnectSocket(socket:Socket) {
-        print(socket.socketfd)
-//        self.connectSockets = [Int32: Socket]()
         DispatchQueue.main.sync { [unowned self, socket] in
             self.connectSockets[socket.socketfd] = socket
         }
@@ -63,30 +61,23 @@ class LongSocket {
                     
                     let byteRead = try socket.read(into: &readData)
                     if byteRead > 0 {
-                        guard let respone = String(data: readData, encoding: .utf8) else {
+                        let res = try? JSONSerialization.jsonObject(with: readData, options: .allowFragments)
+                        guard let respone = res as? Dictionary<String, String> else {
                             break
                         }
-                        if respone.hasPrefix("shutdown") {
-                            DispatchQueue.main.sync {
-                                exit(0)
-                            }
-                        }
-                        print("add user \(respone)")
-                        self.connectUsers[socket.socketfd] = respone
-                        self.connectUserNames.append(respone)
-                        let names:String = "\(socket.remotePort)"
-                        var json = [String:String]()
-                        json["port"] = "\(socket.remotePort)"
-                        json["host"] = socket.remoteHostname
-                        let data = try JSONSerialization.data(withJSONObject: json, options: .prettyPrinted)
-                        print(names)
+                        var dt = respone
+                        dt["host"] = socket.remoteHostname
+                    
+                        self.connectUsers[socket.socketfd] = "exit"
+                        self.connectUserNames.merge([dt["name"]! : dt], uniquingKeysWith: { (_, new) in new })
+                        print(self.connectUserNames)
+                        let data = try JSONSerialization.data(withJSONObject: self.connectUserNames, options: .prettyPrinted)
                         for (_, socket) in self.connectSockets {
                             let status = try socket.isReadableOrWritable()
                             if status.writable {
                                 try socket.write(from: data)
                             }
                         }
-                        print("write")
                     } else {
                         print("close connect")
                         self.connectSockets.removeValue(forKey: socket.socketfd)
@@ -95,7 +86,7 @@ class LongSocket {
                     }
                 } while true
             } catch {
-                print(error)
+                print("读取失败 - " + "\(error)")
             }
         }
     }
