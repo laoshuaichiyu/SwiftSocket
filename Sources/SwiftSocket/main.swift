@@ -65,6 +65,7 @@ class LongSocket {
                         guard let respone = res as? Dictionary<String, String> else {
                             break
                         }
+
                         var dt = respone
                         dt["host"] = socket.remoteHostname
                     
@@ -72,6 +73,7 @@ class LongSocket {
                         self.connectUserNames.merge([dt["name"]! : dt], uniquingKeysWith: { (_, new) in new })
                         print(self.connectUserNames)
                         let data = try JSONSerialization.data(withJSONObject: self.connectUserNames, options: .prettyPrinted)
+
                         for (_, socket) in self.connectSockets {
                             let status = try socket.isReadableOrWritable()
                             if status.writable {
@@ -89,6 +91,18 @@ class LongSocket {
                 print("读取失败 - " + "\(error)")
             }
         }
+    }
+    func getSocketadd_in(address:Socket.Address) -> sockaddr_in? {
+        var s:sockaddr_in?
+        switch address {
+        case let .ipv4(sockaddrin):
+            s = sockaddrin
+            break
+            
+        default: break
+            
+        }
+        return s
     }
 }
 
