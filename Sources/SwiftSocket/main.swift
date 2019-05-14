@@ -68,7 +68,7 @@ class LongSocket {
 
                         var dt = respone
                         dt["host"] = socket.remoteHostname
-                    
+                        dt["port"] = String(socket.remotePort)
                         self.connectUsers[socket.socketfd] = "exit"
                         self.connectUserNames.merge([dt["name"]! : dt], uniquingKeysWith: { (_, new) in new })
                         print(self.connectUserNames)
